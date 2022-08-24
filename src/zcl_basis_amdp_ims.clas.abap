@@ -18,11 +18,15 @@ CLASS zcl_basis_amdp_ims DEFINITION
 
       tt_flight_table TYPE STANDARD TABLE OF ty_flights_line WITH EMPTY KEY.
 
+    METHODS: get_hello RETURNING VALUE(rt_string) TYPE string.
+
     CLASS-METHODS:
       get_flights
         EXPORTING
                   VALUE(result) TYPE tt_flight_table
         RAISING   cx_amdp_execution_error.
+
+
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -30,6 +34,10 @@ ENDCLASS.
 
 
 CLASS zcl_basis_amdp_ims IMPLEMENTATION.
+
+  METHOD get_hello.
+    rt_string = 'Hello Class Method'.
+  ENDMETHOD.
 
   METHOD get_flights BY DATABASE PROCEDURE
       FOR HDB
@@ -61,6 +69,8 @@ CLASS zcl_basis_amdp_ims IMPLEMENTATION.
         out->write( lx_amdp->get_longtext(  ) ).
     ENDTRY.
 
+    out->write( get_hello(  ) ).
+    out->write( '*******************' ).
     out->write( lt_result ).
 
   ENDMETHOD.
