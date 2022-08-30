@@ -16,9 +16,12 @@ CLASS zcl_basis_amdp_ims DEFINITION
         currency          TYPE /dmo/currency_code,
       END OF ty_flights_line,
 
+      tt_carriers     TYPE STANDARD TABLE OF /dmo/carrier WITH EMPTY KEY,
+
       tt_flight_table TYPE STANDARD TABLE OF ty_flights_line WITH EMPTY KEY.
 
-    METHODS: get_hello RETURNING VALUE(rt_string) TYPE string.
+    METHODS: get_hello    RETURNING VALUE(rt_string) TYPE string,
+      get_carriers RETURNING VALUE(rt_carriers) TYPE tt_carriers.
 
     CLASS-METHODS:
       get_flights
@@ -29,11 +32,13 @@ CLASS zcl_basis_amdp_ims DEFINITION
 
 
   PROTECTED SECTION.
+
   PRIVATE SECTION.
 ENDCLASS.
 
 
 CLASS zcl_basis_amdp_ims IMPLEMENTATION.
+
 
   METHOD get_hello.
     rt_string = 'Hello Class Method'.
@@ -59,6 +64,14 @@ CLASS zcl_basis_amdp_ims IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD get_carriers.
+
+    SELECT *
+      FROM /dmo/carrier
+      INTO TABLE @rt_carriers.
+
+  ENDMETHOD.
+
   METHOD if_oo_adt_classrun~main.
 
     TRY.
@@ -72,6 +85,9 @@ CLASS zcl_basis_amdp_ims IMPLEMENTATION.
     out->write( get_hello(  ) ).
     out->write( '*******************' ).
     out->write( lt_result ).
+    out->write( '*******************' ).
+    out->write(  get_carriers(  ) ).
+
 
   ENDMETHOD.
 
