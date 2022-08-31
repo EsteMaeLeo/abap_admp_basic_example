@@ -21,7 +21,8 @@ CLASS zcl_basis_amdp_ims DEFINITION
       tt_flight_table TYPE STANDARD TABLE OF ty_flights_line WITH EMPTY KEY.
 
     METHODS: get_hello    RETURNING VALUE(rt_string) TYPE string,
-      get_carriers RETURNING VALUE(rt_carriers) TYPE tt_carriers.
+      get_carriers RETURNING VALUE(rt_carriers) TYPE tt_carriers,
+      get_flg2     RETURNING VALUE(result) TYPE tt_flight_table.
 
     CLASS-METHODS:
       get_flights
@@ -69,6 +70,21 @@ CLASS zcl_basis_amdp_ims IMPLEMENTATION.
     SELECT *
       FROM /dmo/carrier
       INTO TABLE @rt_carriers.
+
+  ENDMETHOD.
+
+  METHOD get_flg2.
+
+    SELECT DISTINCT
+    c~name AS airline,
+                   f~connection_id AS flight_connection,
+                   f~price AS price,
+                   f~currency_code AS currency
+               INTO TABLE @result
+               FROM /dmo/flight AS f
+               INNER JOIN /dmo/carrier AS c
+               ON f~carrier_id = c~carrier_id.
+
 
   ENDMETHOD.
 
