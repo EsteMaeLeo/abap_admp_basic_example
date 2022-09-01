@@ -4,10 +4,9 @@ CLASS zcl_amp_001 DEFINITION
   CREATE PUBLIC .
 
   PUBLIC SECTION.
+
     INTERFACES: if_amdp_marker_hdb,
-      if_oo_adt_classrun.
-  PROTECTED SECTION.
-  PRIVATE SECTION.
+                if_oo_adt_classrun.
 
     TYPES: tt_booking TYPE STANDARD TABLE OF /dmo/booking,
            tt_sbook   TYPE STANDARD TABLE OF sbook.
@@ -22,6 +21,12 @@ CLASS zcl_amp_001 DEFINITION
         EXPORTING
                   VALUE(result) TYPE tt_sbook
         RAISING   cx_amdp_execution_error.
+
+  PROTECTED SECTION.
+
+  PRIVATE SECTION.
+
+
 ENDCLASS.
 
 
