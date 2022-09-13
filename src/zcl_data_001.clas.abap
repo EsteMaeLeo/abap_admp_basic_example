@@ -71,7 +71,7 @@ CLASS zcl_data_001 IMPLEMENTATION.
     out->write( 'DATA *******************' ).
     out->write( lt_sbook ).
     out->write( '*******************' ).
-
+    out->write( '*******************' ).
 
 
   ENDMETHOD.
