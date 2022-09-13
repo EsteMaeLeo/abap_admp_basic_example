@@ -15,9 +15,10 @@ REPORT zpg_cl_002.
           lv_timestamp_elapsed TYPE timestampl,
           lv_elapsed           TYPE string.
 
-BREAK-POINT.
     GET TIME STAMP FIELD lv_timestamp_start.
+
     lt_sbook = zcl_data_001=>get_sbook_all(  ).
+
     GET TIME STAMP FIELD lv_timestamp_end.
 
     DATA(lv_timepassed_secods) = cl_abap_tstmp=>subtract(
@@ -31,21 +32,30 @@ BREAK-POINT.
 
 ** AMP CLASS
 
-TRY.
-    GET TIME STAMP FIELD lv_timestamp_start.
+    TRY.
+        GET TIME STAMP FIELD lv_timestamp_start.
 
-    zcl_amp_001=>get_sbook_all(
-        IMPORTING
-            result = DATA(lt_result) ).
+        zcl_amp_001=>get_sbook_all(
+            IMPORTING
+                result = DATA(lt_result) ).
 
-    GET TIME STAMP FIELD lv_timestamp_end.
+        GET TIME STAMP FIELD lv_timestamp_end.
 
-    DATA(lv_timepassed_secods2) = cl_abap_tstmp=>subtract(
-                                  tstmp1 = lv_timestamp_end
-                                  tstmp2 = lv_timestamp_start ).
+        DATA(lv_timepassed_secods2) = cl_abap_tstmp=>subtract(
+                                      tstmp1 = lv_timestamp_end
+                                      tstmp2 = lv_timestamp_start ).
 
-  CATCH cx_amdp_execution_error INTO DATA(lx_amdp).
-    cl_demo_output=>display( lx_amdp->get_longtext(  ) ).
-ENDTRY.
+      CATCH cx_amdp_execution_error INTO DATA(lx_amdp).
+        cl_demo_output=>display( lx_amdp->get_longtext(  ) ).
+    ENDTRY.
 
 BREAK-POINT.
+
+
+    cl_demo_output=>new(
+            )->begin_section( |Time Seconds regular | && lv_timepassed_secods
+           ")->write_data( lt_result
+            )->end_section(
+            )->next_section( |Time Seconds AMDP | && lv_timepassed_secods2
+            )->end_section(
+            )->display( ).
