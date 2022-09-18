@@ -21,8 +21,8 @@ CLASS zcl_basis_amdp_ims DEFINITION
       tt_flight_table TYPE STANDARD TABLE OF ty_flights_line WITH EMPTY KEY.
 
     METHODS: get_hello    RETURNING VALUE(rt_string) TYPE string,
-      get_carriers RETURNING VALUE(rt_carriers) TYPE tt_carriers,
-      get_flg2     RETURNING VALUE(result) TYPE tt_flight_table.
+             get_carriers RETURNING VALUE(rt_carriers) TYPE tt_carriers,
+             get_flg2     RETURNING VALUE(result) TYPE tt_flight_table.
 
     CLASS-METHODS:
       get_flights
