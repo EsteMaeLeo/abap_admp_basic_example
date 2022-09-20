@@ -103,6 +103,7 @@ CLASS zcl_basis_amdp_ims IMPLEMENTATION.
     out->write( lt_result ).
     out->write( '*******************' ).
     out->write(  get_carriers(  ) ).
+    out->write( '*******************' ).
 
 
   ENDMETHOD.
