@@ -104,6 +104,7 @@ CLASS zcl_amp_001 IMPLEMENTATION.
     out->write( '*******************' ).
     out->write( lt_result ).
     out->write( '*******************' ).
+    out->write( '*******************' ).
 
 
 
