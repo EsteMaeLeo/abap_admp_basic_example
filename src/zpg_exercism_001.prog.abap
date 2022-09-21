@@ -142,7 +142,7 @@ CLASS zcl_itab_combination IMPLEMENTATION.
 
   ENDMETHOD.
 
-    METHOD perform_combination2.
+  METHOD perform_combination2.
 
     combined_data = VALUE #(
         FOR ls_alphatab IN  alphas INDEX INTO lv_index
@@ -153,6 +153,8 @@ CLASS zcl_itab_combination IMPLEMENTATION.
   ENDMETHOD.
 
 ENDCLASS.
+
+
 
 CLASS zcl_itab_aggregation DEFINITION
   FINAL
@@ -193,3 +195,91 @@ CLASS zcl_itab_aggregation IMPLEMENTATION.
   ENDMETHOD.
 
 ENDCLASS.
+
+"*************************************************************************************************
+
+CLASS zcl_main DEFINITION
+  FINAL
+  CREATE PUBLIC ..
+
+  PUBLIC SECTION.
+    TYPES group TYPE c LENGTH 1.
+    TYPES: BEGIN OF initial_numbers_type,
+             group  TYPE group,
+             number TYPE i,
+           END OF initial_numbers_type,
+           initial_numbers TYPE STANDARD TABLE OF initial_numbers_type WITH EMPTY KEY.
+
+    TYPES: BEGIN OF aggregated_data_type,
+             group   TYPE group,
+             count   TYPE i,
+             sum     TYPE i,
+             min     TYPE i,
+             max     TYPE i,
+             average TYPE f,
+           END OF aggregated_data_type,
+           aggregated_data TYPE STANDARD TABLE OF aggregated_data_type WITH EMPTY KEY.
+
+    METHODS fill_itab
+      RETURNING
+        VALUE(initial_data) TYPE initial_numbers.
+
+
+    METHODS perform_aggregation
+      IMPORTING
+        initial_numbers        TYPE initial_numbers
+      RETURNING
+        VALUE(aggregated_data) TYPE aggregated_data.
+
+    CLASS-DATA:  lt_initial TYPE initial_numbers.
+
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+
+ENDCLASS.
+
+
+CLASS zcl_main  IMPLEMENTATION.
+
+  METHOD fill_itab.
+
+    initial_data = VALUE initial_numbers( ( group = 'A' number = '10' )
+                                           ( group = 'B' number = '5' )
+                                           ( group = 'A' number = '6' )
+                                           ( group = 'C' number = '22' )
+                                           ( group = 'A' number = '13'  )
+                                           ( group = 'C' number = '500' ) ).
+    lt_initial = initial_data.
+
+  ENDMETHOD.
+
+  METHOD perform_aggregation.
+    " add solution here
+
+  ENDMETHOD.
+
+ENDCLASS.
+
+
+
+START-OF-SELECTION.
+
+  DATA lt_agg TYPE zcl_main=>aggregated_data.
+
+  DATA(lo_main) = NEW zcl_main(  ).
+
+  lo_main->fill_itab(  ).
+
+  lt_agg = lo_main->perform_aggregation( zcl_main=>lt_initial  ).
+
+  "cl_demo_output=>display( zcl_main=>lt_initial ).
+
+
+  cl_demo_output=>new(
+        )->begin_section( |First Table |
+        )->write_data( zcl_main=>lt_initial
+        )->end_section(
+        )->next_section( |Second Table|
+        )->write_data( lt_agg
+        )->end_section(
+        )->display( ).
