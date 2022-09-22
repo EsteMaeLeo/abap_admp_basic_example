@@ -255,12 +255,21 @@ CLASS zcl_main  IMPLEMENTATION.
 
   METHOD perform_aggregation.
     " add solution here
-    aggregated_data = VALUE #(
-                                FOR GROUPS group OF wa_agg IN initial_numbers
-                                GROUP BY ( group =  wa_agg-group )
-                                (
-                                 group = wa_agg-group
-                                ) ).
+*    aggregated_data = VALUE aggregated_data(
+*                                FOR GROUPS group1 OF wa_agg IN initial_numbers
+*                                GROUP BY ( group1 =  wa_agg-group )
+*                                (
+*                                 group = wa_agg-group
+*                                 count = wa_agg-number
+*                                ) ).
+*
+
+    aggregated_data = VALUE aggregated_data(
+FOR  wa_agg IN initial_numbers
+(
+ group = wa_agg-group
+ count = wa_agg-number
+ ) ).
 
   ENDMETHOD.
 
@@ -279,7 +288,7 @@ START-OF-SELECTION.
   lt_agg = lo_main->perform_aggregation( zcl_main=>lt_initial  ).
 
   "cl_demo_output=>display( zcl_main=>lt_initial ).
-
+  DATA(v1) = REDUCE i( INIT sum = 0 FOR i = 1 THEN i + 1 UNTIL i > 10 NEXT sum = sum + i ).
 
   cl_demo_output=>new(
         )->begin_section( |First Table |
@@ -287,5 +296,6 @@ START-OF-SELECTION.
         )->end_section(
         )->next_section( |Second Table|
         )->write_data( lt_agg
+        )->write_data( v1
         )->end_section(
         )->display( ).
