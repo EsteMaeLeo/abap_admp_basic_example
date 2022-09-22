@@ -255,6 +255,12 @@ CLASS zcl_main  IMPLEMENTATION.
 
   METHOD perform_aggregation.
     " add solution here
+    aggregated_data = VALUE #(
+                                FOR GROUPS group OF wa_agg IN initial_numbers
+                                GROUP BY ( group =  wa_agg-group )
+                                (
+                                 group = wa_agg-group
+                                ) ).
 
   ENDMETHOD.
 
