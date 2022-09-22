@@ -287,6 +287,19 @@ START-OF-SELECTION.
 
   lt_agg = lo_main->perform_aggregation( zcl_main=>lt_initial  ).
 
+  SELECT * FROM spfli INTO TABLE @DATA(spfli).
+
+  TYPES group_keys TYPE STANDARD TABLE OF spfli-carrid WITH EMPTY KEY.
+
+  cl_demo_output=>display(
+    VALUE group_keys(
+      FOR GROUPS carrier OF wa IN spfli
+      GROUP BY wa-carrid
+      ASCENDING
+      WITHOUT MEMBERS
+      ( carrier ) ) ).
+
+
   "cl_demo_output=>display( zcl_main=>lt_initial ).
   DATA(v1) = REDUCE i( INIT sum = 0 FOR i = 1 THEN i + 1 UNTIL i > 10 NEXT sum = sum + i ).
 
