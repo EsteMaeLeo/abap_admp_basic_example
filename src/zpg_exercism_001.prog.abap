@@ -233,6 +233,8 @@ CLASS zcl_main DEFINITION
 
     METHODS example_reduce.
 
+    METHODS example_groupby.
+
     CLASS-DATA:  lt_initial TYPE initial_numbers.
 
   PROTECTED SECTION.
@@ -257,6 +259,10 @@ CLASS zcl_main  IMPLEMENTATION.
 
   METHOD example_reduce.
 
+    DATA lt_test TYPE TABLE OF i WITH EMPTY KEY.
+
+    lt_test = VALUE #( FOR j = 1 WHILE j <= 10 ( j ) ).
+
     cl_demo_output=>new( )->next_section( |Simple sum usgin Reduce| )->write(
       REDUCE i( INIT s = 0
                 FOR i = 1 UNTIL i > 10
@@ -266,8 +272,90 @@ CLASS zcl_main  IMPLEMENTATION.
                           FOR i = 10 THEN i - 1 UNTIL i = 0
                           NEXT text = text && | { i  } |
           )
+       )->next_section( |Table| )->write(
+       lt_test
+       )->next_section( |Use reduce table example| )->write(
+       REDUCE i( INIT x = 0
+                 FOR ls_test IN LT_Test
+                 NEXT x = x + ls_test
+               )
       )->display( ).
 
+
+  ENDMETHOD.
+
+  METHOD example_groupby.
+
+    SELECT *
+    FROM spfli
+    INTO TABLE @DATA(lt_spfli).
+
+    DATA members LIKE lt_spfli.
+    DATA lt_grp LIKE lt_spfli.
+
+    cl_demo_output=>display( lt_spfli ).
+
+    LOOP AT lt_spfli INTO DATA(ls_spfli)
+        GROUP BY ( carrier = ls_spfli-carrid city_from = ls_spfli-cityfrom )
+        ASCENDING
+        ASSIGNING FIELD-SYMBOL(<lfs_group>).
+
+      LOOP AT GROUP <lfs_group> ASSIGNING FIELD-SYMBOL(<lfs_spfli_grp>).
+        members = VALUE #( BASE members ( <lfs_spfli_grp> ) ).
+      ENDLOOP.
+
+    ENDLOOP.
+    cl_demo_output=>display( members ).
+
+    UNASSIGN: <lfs_group>, <lfs_spfli_grp>.
+    FREE members.
+
+    DATA count TYPE i.
+    DATA distance TYPE spfli-distance.
+    TYPES: BEGIN OF t_datos,
+             city     TYPE s_from_cit,
+             distance TYPE s_distance,
+             avg      TYPE s_distance,
+             total    TYPE s_distance,
+             max      TYPE s_distance,
+             min      TYPE s_distance,
+           END OF t_datos.
+
+    DATA wa_dato TYPE t_datos.
+    DATA it_dato TYPE STANDARD TABLE OF t_datos.
+
+    LOOP AT lt_spfli INTO ls_spfli
+    GROUP BY ls_spfli-cityfrom
+    ASCENDING
+    INTO DATA(s_group).
+
+      LOOP AT GROUP s_group ASSIGNING <lfs_spfli_grp>.
+
+
+        count = count + 1.
+        distance = <lfs_spfli_grp>-distance + distance.
+        wa_dato-avg = distance / count.
+        members = VALUE #( BASE members ( <lfs_spfli_grp> ) ).
+        wa_dato-city = <lfs_spfli_grp>-cityfrom.
+        wa_dato-total = count.
+
+        IF wa_dato-max <  <lfs_spfli_grp>-distance.
+             wa_dato-max =  <lfs_spfli_grp>-distance.
+        elseif wa_dato-max >  <lfs_spfli_grp>-distance.
+        wa_dato-min =  <lfs_spfli_grp>-distance.
+        ENDIF.
+
+      ENDLOOP.
+
+
+      wa_dato-distance =  distance.
+      APPEND wa_dato TO it_dato.
+
+      clear: wa_dato,
+              count.
+
+    ENDLOOP.
+    cl_demo_output=>display( it_dato ).
 
   ENDMETHOD.
 
@@ -359,7 +447,10 @@ START-OF-SELECTION.
 
   lo_main->fill_itab(  ).
 
+  lo_main->example_groupby(  ).
+
   lo_main->example_reduce(  ).
+
 
   lt_agg = lo_main->perform_aggregation( zcl_main=>lt_initial  ).
 
