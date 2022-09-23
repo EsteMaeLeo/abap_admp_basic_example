@@ -264,12 +264,34 @@ CLASS zcl_main  IMPLEMENTATION.
 *                                ) ).
 *
 
+  cl_demo_output=>display(
+     VALUE aggregated_data(
+        FOR GROUPS grp OF  wa_agg IN initial_numbers
+        GROUP BY wa_agg-group
+              ASCENDING
+      WITHOUT MEMBERS
+        (
+         group = grp
+
+         ) ) ).
+
+
+    aggregated_data = VALUE aggregated_data(
+        FOR GROUPS grp OF  wa_agg IN initial_numbers
+        INDEX INTO lv_index
+        GROUP BY wa_agg-group
+      WITHOUT MEMBERS
+        (
+         group = grp
+         count = lv_index
+         ) ).
+
     aggregated_data = VALUE aggregated_data(
 FOR  wa_agg IN initial_numbers
 (
- group = wa_agg-group
- count = wa_agg-number
- ) ).
+group = wa_agg-group
+count = wa_agg-number
+) ).
 
   ENDMETHOD.
 
