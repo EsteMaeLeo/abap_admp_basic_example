@@ -231,6 +231,8 @@ CLASS zcl_main DEFINITION
       RETURNING
         VALUE(aggregated_data) TYPE aggregated_data.
 
+    METHODS example_reduce.
+
     CLASS-DATA:  lt_initial TYPE initial_numbers.
 
   PROTECTED SECTION.
@@ -253,6 +255,22 @@ CLASS zcl_main  IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD example_reduce.
+
+    cl_demo_output=>new( )->next_section( |Simple sum usgin Reduce| )->write(
+      REDUCE i( INIT s = 0
+                FOR i = 1 UNTIL i > 10
+                NEXT s = s + i )
+      )->next_section( |String concatation using Reduce| )->write(
+          REDUCE string( INIT text = |Count down: |
+                          FOR i = 10 THEN i - 1 UNTIL i = 0
+                          NEXT text = text && | { i  } |
+          )
+      )->display( ).
+
+
+  ENDMETHOD.
+
   METHOD perform_aggregation.
     " add solution here
 *    aggregated_data = VALUE aggregated_data(
@@ -264,16 +282,48 @@ CLASS zcl_main  IMPLEMENTATION.
 *                                ) ).
 *
 
-  cl_demo_output=>display(
-     VALUE aggregated_data(
-        FOR GROUPS grp OF  wa_agg IN initial_numbers
-        GROUP BY wa_agg-group
-              ASCENDING
-      WITHOUT MEMBERS
-        (
-         group = grp
+    TYPES : BEGIN OF ty_flight,
+              seq_num TYPE i,
+              carrier TYPE s_carrname,
+              connect TYPE s_conn_id,
+              fldate  TYPE s_date,
+            END OF ty_flight.
 
-         ) ) ).
+    DATA lt_new_flights TYPE STANDARD TABLE OF ty_flight.
+
+    SELECT * FROM sflight INTO TABLE @DATA(lt_flights).
+    IF sy-subrc EQ 0.
+      SELECT * FROM scarr INTO TABLE @DATA(lt_scarr).
+
+    ENDIF.
+
+    "FOR Iteration
+    lt_new_flights =
+      VALUE #(
+        FOR ls_flight IN lt_flights INDEX INTO lv_index
+                                    WHERE ( carrid = 'AA' AND
+                                            connid = '0017' )
+        LET lv_carrname = lt_scarr[ carrid = ls_flight-carrid ]-carrname
+        IN  carrier = lv_carrname
+        ( seq_num = lv_index
+          connect = ls_flight-connid
+          fldate  = ls_flight-fldate
+        )
+      ).
+
+    cl_demo_output=>display( lt_new_flights ).
+
+
+    cl_demo_output=>display(
+       VALUE aggregated_data(
+          FOR GROUPS grp OF  wa_agg IN initial_numbers
+          GROUP BY wa_agg-group
+                ASCENDING
+        WITHOUT MEMBERS
+          (
+           group = grp
+
+           ) ) ).
 
 
     aggregated_data = VALUE aggregated_data(
@@ -281,9 +331,11 @@ CLASS zcl_main  IMPLEMENTATION.
         INDEX INTO lv_index
         GROUP BY wa_agg-group
       WITHOUT MEMBERS
+      LET suma =  1
+      IN count =  suma
         (
          group = grp
-         count = lv_index
+         "count = lv_index
          ) ).
 
     aggregated_data = VALUE aggregated_data(
@@ -306,6 +358,8 @@ START-OF-SELECTION.
   DATA(lo_main) = NEW zcl_main(  ).
 
   lo_main->fill_itab(  ).
+
+  lo_main->example_reduce(  ).
 
   lt_agg = lo_main->perform_aggregation( zcl_main=>lt_initial  ).
 

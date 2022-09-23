@@ -73,6 +73,7 @@ CLASS zcl_data_001 IMPLEMENTATION.
     out->write( '*******************' ).
     out->write( '*******************' ).
     out->write( '*******************' ).
+    out->write( '*******************' ).
 
 
   ENDMETHOD.
