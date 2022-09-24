@@ -218,7 +218,8 @@ CLASS zcl_main DEFINITION
              max     TYPE i,
              average TYPE f,
            END OF aggregated_data_type,
-           aggregated_data TYPE STANDARD TABLE OF aggregated_data_type WITH EMPTY KEY.
+           aggregated_data TYPE STANDARD TABLE OF aggregated_data_type WITH EMPTY KEY,
+           aggdata TYPE aggregated_data_type.
 
     METHODS fill_itab
       RETURNING
@@ -324,38 +325,120 @@ CLASS zcl_main  IMPLEMENTATION.
     DATA wa_dato TYPE t_datos.
     DATA it_dato TYPE STANDARD TABLE OF t_datos.
 
-    LOOP AT lt_spfli INTO ls_spfli
-    GROUP BY ls_spfli-cityfrom
+*    LOOP AT lt_spfli INTO ls_spfli
+*    GROUP BY ls_spfli-cityfrom
+*    ASCENDING
+*    INTO DATA(s_group).
+*
+*      LOOP AT GROUP s_group ASSIGNING <lfs_spfli_grp>.
+*
+*
+*        count = count + 1.
+*        distance = <lfs_spfli_grp>-distance + distance.
+*        wa_dato-avg = distance / count.
+*        members = VALUE #( BASE members ( <lfs_spfli_grp> ) ).
+*        wa_dato-city = <lfs_spfli_grp>-cityfrom.
+*        wa_dato-total = count.
+*
+*        IF <lfs_spfli_grp>-distance > wa_dato-max.
+*             wa_dato-max =  <lfs_spfli_grp>-distance.
+*        elseif  <lfs_spfli_grp>-distance < wa_dato-max .
+*        wa_dato-min =  <lfs_spfli_grp>-distance.
+*        ENDIF.
+*
+*      ENDLOOP.
+*
+*
+*
+*      wa_dato-distance =  distance.
+*      APPEND wa_dato TO it_dato.
+*
+*      clear: wa_dato,
+*              count.
+*
+*    ENDLOOP.
+
+    LOOP AT lt_spfli ASSIGNING FIELD-SYMBOL(<ls_spfli>)
+    GROUP BY ( cityfrom = <ls_spfli>-cityfrom
+               size = GROUP SIZE
+               index = GROUP INDEX
+              )
     ASCENDING
-    INTO DATA(s_group).
+    REFERENCE INTO DATA(s_group).
+
 
       LOOP AT GROUP s_group ASSIGNING <lfs_spfli_grp>.
 
 
         count = count + 1.
         distance = <lfs_spfli_grp>-distance + distance.
-        wa_dato-avg = distance / count.
-        members = VALUE #( BASE members ( <lfs_spfli_grp> ) ).
-        wa_dato-city = <lfs_spfli_grp>-cityfrom.
-        wa_dato-total = count.
 
-        IF wa_dato-max <  <lfs_spfli_grp>-distance.
-             wa_dato-max =  <lfs_spfli_grp>-distance.
-        elseif wa_dato-max >  <lfs_spfli_grp>-distance.
-        wa_dato-min =  <lfs_spfli_grp>-distance.
+        "members = VALUE #( BASE members ( <lfs_spfli_grp> ) ).
+        "wa_dato-city = <lfs_spfli_grp>-cityfrom.
+        "wa_dato-total = count.
+        IF count = 1.
+          wa_dato-max =  <lfs_spfli_grp>-distance.
+          wa_dato-min = <lfs_spfli_grp>-distance.
+        ELSE.
+          IF <lfs_spfli_grp>-distance > wa_dato-max.
+            wa_dato-max =  <lfs_spfli_grp>-distance.
+          ENDIF.
+          IF  <lfs_spfli_grp>-distance < wa_dato-min .
+            wa_dato-min =  <lfs_spfli_grp>-distance.
+          ENDIF.
         ENDIF.
-
       ENDLOOP.
 
+      wa_dato-total = s_group->size.
+
+      wa_dato-city = s_group->cityfrom.
 
       wa_dato-distance =  distance.
+      wa_dato-avg = wa_dato-distance / s_group->size.
       APPEND wa_dato TO it_dato.
 
-      clear: wa_dato,
+      CLEAR: wa_dato,
               count.
 
     ENDLOOP.
+
     cl_demo_output=>display( it_dato ).
+
+
+    TYPES: BEGIN OF ty_s_value,
+             sparte TYPE char2,
+             vkont  TYPE char12,
+             exbel  TYPE char16,
+           END OF ty_s_value.
+    TYPES: ty_t_value TYPE STANDARD TABLE OF ty_s_value WITH EMPTY KEY.
+
+    DATA(lt_tab) =
+    VALUE ty_t_value(
+                     ( sparte = '05' vkont = '800000008422' exbel = '1NSN150900000058')
+                     ( sparte = 'L2' vkont = '800000008422' exbel = '1NSN150900000058')
+                     ( sparte = '05' vkont = '800000008422' exbel = '1NSN150900000037')
+                     ( sparte = 'L2' vkont = '800000008422' exbel = '1NSN150900000037')
+                     ( sparte = '05' vkont = '800000008422' exbel = '1NSN150900000013')
+                     ( sparte = 'L2' vkont = '800000008422' exbel = '1NSN150900000013')
+                     ( sparte = '05' vkont = '800000008415' exbel = '1HSN151200000009')
+                     ( sparte = 'S1' vkont = '800000008415' exbel = '1HSN151200000009')
+                     ( sparte = '05' vkont = '800000008415' exbel = '1HSN151200000008')
+                     ( sparte = 'S1' vkont = '800000008415' exbel = '1HSN151200000008')
+                     ( sparte = 'L1' vkont = '800000008422' exbel = '1NSN150900000050')
+                     ( sparte = 'L1' vkont = '800000008422' exbel = '1NSN150900000029')
+                    ).
+
+    DATA(lt_result) =
+    VALUE ty_t_value( FOR GROUPS <group_key> OF <wa> IN lt_tab
+                      GROUP BY ( sparte = <wa>-sparte vkont = <wa>-vkont )
+                      LET max2 =
+                      REDUCE #( INIT max =
+                                VALUE ty_s_value( )
+                                FOR <m> IN GROUP <group_key>
+                                NEXT max = COND #( WHEN <m>-exbel > max-exbel THEN <m> ELSE max ) )
+                      IN ( max2 ) ).
+    .
+    cl_demo_output=>display( lt_result ).
 
   ENDMETHOD.
 
@@ -427,11 +510,31 @@ CLASS zcl_main  IMPLEMENTATION.
          ) ).
 
     aggregated_data = VALUE aggregated_data(
-FOR  wa_agg IN initial_numbers
-(
-group = wa_agg-group
-count = wa_agg-number
-) ).
+        FOR  wa_agg IN initial_numbers
+        (
+        group = wa_agg-group
+        count = wa_agg-number
+        ) ).
+
+        data  aggdata2 TYPE aggregated_data_type.
+
+    aggregated_data = VALUE aggregated_data(
+        FOR GROUPS ls_grp OF  <fs_agg> IN initial_numbers
+        GROUP BY ( group = <fs_agg>-group
+                   count = group size )
+              ( value #( LET lv_sum = REDUCE i( INIT lv_val TYPE i
+                                      FOR ls_gg IN GROUP ls_grp
+                                      NEXT lv_val = lv_val + <fs_agg>-number )
+
+
+
+        IN base corresponding aggregated_data_type( ls_grp )
+
+         group = ls_grp-group
+         count = lv_sum
+         "count = lv_index
+         ) ) ).
+
 
   ENDMETHOD.
 
