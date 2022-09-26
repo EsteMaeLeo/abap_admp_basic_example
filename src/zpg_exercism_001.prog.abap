@@ -219,7 +219,7 @@ CLASS zcl_main DEFINITION
              average TYPE f,
            END OF aggregated_data_type,
            aggregated_data TYPE STANDARD TABLE OF aggregated_data_type WITH EMPTY KEY,
-           aggdata TYPE aggregated_data_type.
+           aggdata         TYPE aggregated_data_type.
 
     METHODS fill_itab
       RETURNING
@@ -444,6 +444,57 @@ CLASS zcl_main  IMPLEMENTATION.
 
   METHOD perform_aggregation.
     " add solution here
+
+
+    DATA: count      TYPE i,
+          sum_number TYPE i,
+          wa_dato    TYPE  aggregated_data_type.
+
+    LOOP AT initial_numbers ASSIGNING FIELD-SYMBOL(<lfs_initial_numbers>)
+       GROUP BY ( group = <lfs_initial_numbers>-group
+                  size = GROUP SIZE
+                  index = GROUP INDEX
+                 )
+       ASCENDING
+       REFERENCE INTO DATA(s_group).
+
+
+      LOOP AT GROUP s_group ASSIGNING FIELD-SYMBOL(<lfs_grp>).
+
+
+        count = count + 1.
+        sum_number = <lfs_grp>-number + sum_number.
+
+        IF count = 1.
+          wa_dato-max =  <lfs_grp>-number.
+          wa_dato-min = <lfs_grp>-number.
+          wa_dato-group = <lfs_grp>-group.
+        ELSE.
+          IF <lfs_grp>-number > wa_dato-max.
+            wa_dato-max =  <lfs_grp>-number.
+          ENDIF.
+          IF  <lfs_grp>-number < wa_dato-min .
+            wa_dato-min =  <lfs_grp>-number.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      wa_dato-count = s_group->size.
+
+      wa_dato-sum =  sum_number.
+      wa_dato-average  = wa_dato-sum / s_group->size.
+      APPEND wa_dato TO aggregated_data.
+
+      CLEAR: wa_dato,
+              count,
+              sum_number.
+
+    ENDLOOP.
+
+
+    cl_demo_output=>display( aggregated_data ).
+
+
 *    aggregated_data = VALUE aggregated_data(
 *                                FOR GROUPS group1 OF wa_agg IN initial_numbers
 *                                GROUP BY ( group1 =  wa_agg-group )
@@ -516,24 +567,25 @@ CLASS zcl_main  IMPLEMENTATION.
         count = wa_agg-number
         ) ).
 
-        data  aggdata2 TYPE aggregated_data_type.
+    DATA  aggdata2 TYPE aggregated_data_type.
 
-    aggregated_data = VALUE aggregated_data(
-        FOR GROUPS ls_grp OF  <fs_agg> IN initial_numbers
-        GROUP BY ( group = <fs_agg>-group
-                   count = group size )
-              ( value #( LET lv_sum = REDUCE i( INIT lv_val TYPE i
-                                      FOR ls_gg IN GROUP ls_grp
-                                      NEXT lv_val = lv_val + <fs_agg>-number )
+*    aggregated_data = VALUE aggregated_data(
+*        FOR GROUPS ls_grp OF  <fs_agg> IN initial_numbers
+*        GROUP BY ( group = <fs_agg>-group
+*                   count = group size )
+*              ( value #( LET lv_sum = REDUCE i( INIT lv_val TYPE i
+*                                      FOR ls_gg IN GROUP ls_grp
+*                                      NEXT lv_val = lv_val + <fs_agg>-number )
+*
+*
+*
+*        IN base corresponding aggregated_data_type( ls_grp )
+*
+*         group = ls_grp-group
+*         count = lv_sum
+*         "count = lv_index
+*         ) ) ).
 
-
-
-        IN base corresponding aggregated_data_type( ls_grp )
-
-         group = ls_grp-group
-         count = lv_sum
-         "count = lv_index
-         ) ) ).
 
 
   ENDMETHOD.
