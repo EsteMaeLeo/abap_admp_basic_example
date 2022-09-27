@@ -232,6 +232,12 @@ CLASS zcl_main DEFINITION
       RETURNING
         VALUE(aggregated_data) TYPE aggregated_data.
 
+    METHODS perform_aggregation2
+      IMPORTING
+        initial_numbers        TYPE initial_numbers
+      RETURNING
+        VALUE(aggregated_data) TYPE aggregated_data.
+
     METHODS example_reduce.
 
     METHODS example_groupby.
@@ -442,11 +448,32 @@ CLASS zcl_main  IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD perform_aggregation2.
+    LOOP AT initial_numbers REFERENCE INTO DATA(initial_number)
+       GROUP BY ( key = initial_number->group  count = GROUP SIZE )
+       ASCENDING
+       REFERENCE INTO DATA(group_key).
+      APPEND INITIAL LINE TO aggregated_data REFERENCE INTO DATA(aggregated_item).
+      aggregated_item->group = group_key->key.
+      aggregated_item->count = group_key->count.
+      aggregated_item->min = 9999999.
+      LOOP AT GROUP group_key REFERENCE INTO DATA(group_item).
+        aggregated_item->sum = aggregated_item->sum + group_item->number.
+        aggregated_item->min = nmin( val1 = aggregated_item->min
+                                     val2 = group_item->number ).
+        aggregated_item->max = nmax( val1 = aggregated_item->max
+                                     val2 = group_item->number ).
+      ENDLOOP.
+      aggregated_item->average = aggregated_item->sum / aggregated_item->count.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD perform_aggregation.
     " add solution here
 
 
     DATA: count      TYPE i,
+          count1     TYPE i,
           sum_number TYPE i,
           wa_dato    TYPE  aggregated_data_type.
 
@@ -491,6 +518,118 @@ CLASS zcl_main  IMPLEMENTATION.
 
     ENDLOOP.
 
+    DATA initial_temp TYPE STANDARD TABLE OF  initial_numbers_type.
+    DATA initial_temp2 TYPE STANDARD TABLE OF  initial_numbers_type.
+
+    DATA wa_initial_temp TYPE initial_numbers_type.
+
+    initial_temp = initial_numbers.
+    initial_temp2 = initial_numbers.
+
+    SORT initial_temp BY group.
+    SORT initial_temp2 BY group.
+
+    DELETE ADJACENT DUPLICATES FROM initial_temp COMPARING group.
+
+    LOOP AT initial_temp INTO  wa_initial_temp.
+
+      READ TABLE initial_temp2 TRANSPORTING NO FIELDS
+             WITH KEY group = wa_initial_temp-group
+             BINARY SEARCH.
+
+      IF sy-subrc EQ 0.
+
+        LOOP AT initial_temp2 FROM sy-tabix
+                        ASSIGNING <lfs_initial_numbers> .
+
+          IF <lfs_initial_numbers>-group <> wa_initial_temp-group.
+            EXIT.
+          ENDIF.
+
+          count1 = count1 + 1.
+          sum_number = <lfs_initial_numbers>-number + sum_number.
+
+          IF count1 = 1.
+            wa_dato-max = <lfs_initial_numbers>-number.
+            wa_dato-min = <lfs_initial_numbers>-number.
+            wa_dato-group = <lfs_initial_numbers>-group.
+          ELSE.
+            IF <lfs_initial_numbers>-number > wa_dato-max.
+              wa_dato-max =  <lfs_initial_numbers>-number.
+            ENDIF.
+            IF  <lfs_initial_numbers>-number < wa_dato-min .
+              wa_dato-min =  <lfs_initial_numbers>-number.
+            ENDIF.
+          ENDIF.
+        ENDLOOP.
+
+        wa_dato-count = count1.
+        wa_dato-sum =  sum_number.
+        wa_dato-average  = wa_dato-sum / count1.
+        APPEND wa_dato TO aggregated_data.
+
+        CLEAR: wa_dato,
+                count1,
+                sum_number.
+      ENDIF.
+    ENDLOOP.
+
+    LOOP AT initial_numbers INTO  DATA(ls_numbers2)
+     GROUP BY ( group = ls_numbers2-group
+                size = GROUP SIZE
+                index = GROUP INDEX
+               )
+     ASCENDING
+     REFERENCE INTO DATA(s1_group).
+
+      LOOP AT GROUP s1_group INTO DATA(ls_grp).
+        count = count + 1.
+        sum_number = ls_grp-number + sum_number.
+
+        IF count = 1.
+          wa_dato-max =  ls_grp-number.
+          wa_dato-min = ls_grp-number.
+          wa_dato-group = ls_grp-group.
+        ELSE.
+          IF ls_grp-number > wa_dato-max.
+            wa_dato-max =  ls_grp-number.
+          ENDIF.
+          IF  ls_grp-number < wa_dato-min .
+            wa_dato-min =  ls_grp-number.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      wa_dato-count = s_group->size.
+      wa_dato-sum =  sum_number.
+      wa_dato-average  = wa_dato-sum / s_group->size.
+      APPEND wa_dato TO aggregated_data.
+
+      CLEAR: wa_dato,
+              count,
+              sum_number.
+
+    ENDLOOP.
+
+
+    cl_demo_output=>display( aggregated_data ).
+
+    aggregated_data = VALUE #(
+     FOR GROUPS grp OF rec IN initial_numbers
+     GROUP BY ( group = rec-group cnt = GROUP SIZE )
+     LET res = REDUCE aggregated_data_type( INIT tmp = VALUE aggregated_data_type( min = initial_numbers[ group = grp-group ]-number )
+               FOR rec2 IN GROUP grp
+               NEXT tmp-sum = tmp-sum + rec2-number
+                  tmp-min = COND #( WHEN tmp-min > rec2-number THEN rec2-number ELSE tmp-min )
+                  tmp-max = COND #( WHEN tmp-max < rec2-number THEN rec2-number ELSE tmp-max )
+               ) IN
+               ( group = grp-group
+                 count = grp-cnt
+                 sum = res-sum
+                 min = res-min
+                 max = res-max
+                 average = res-sum / grp-cnt )
+     ).
 
     cl_demo_output=>display( aggregated_data ).
 
@@ -538,25 +677,25 @@ CLASS zcl_main  IMPLEMENTATION.
 
     cl_demo_output=>display(
        VALUE aggregated_data(
-          FOR GROUPS grp OF  wa_agg IN initial_numbers
+          FOR GROUPS grp1 OF  wa_agg IN initial_numbers
           GROUP BY wa_agg-group
                 ASCENDING
         WITHOUT MEMBERS
           (
-           group = grp
+           group = grp1
 
            ) ) ).
 
 
     aggregated_data = VALUE aggregated_data(
-        FOR GROUPS grp OF  wa_agg IN initial_numbers
+        FOR GROUPS grp1 OF  wa_agg IN initial_numbers
         INDEX INTO lv_index
         GROUP BY wa_agg-group
       WITHOUT MEMBERS
       LET suma =  1
       IN count =  suma
         (
-         group = grp
+         group = grp1
          "count = lv_index
          ) ).
 
@@ -608,6 +747,10 @@ START-OF-SELECTION.
 
 
   lt_agg = lo_main->perform_aggregation( zcl_main=>lt_initial  ).
+
+  FREE lt_agg.
+
+  lt_agg = lo_main->perform_aggregation2( zcl_main=>lt_initial  ).
 
   SELECT * FROM spfli INTO TABLE @DATA(spfli).
 
