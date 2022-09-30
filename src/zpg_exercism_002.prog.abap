@@ -48,10 +48,15 @@ CLASS zcl_itab_nesting DEFINITION
            END OF artist_album_nested_type.
     TYPES nested_data TYPE STANDARD TABLE OF artist_album_nested_type WITH KEY artist_id.
 
-    DATA: lt_artists     TYPE artists,
-          lt_albums      TYPE albums,
-          lt_songs       TYPE songs,
-          lt_nested_data TYPE nested_data.
+*    DATA: "lt_artists     TYPE artists,
+*          lt_albums      TYPE albums,
+*          lt_songs       TYPE songs,
+*          lt_nested_data TYPE nested_data.
+
+    CLASS-DATA: lt_artists     TYPE artists,
+                lt_albums      TYPE albums,
+                lt_songs       TYPE songs,
+                lt_nested_data TYPE nested_data.
 
     METHODS fill_itab.
 
@@ -101,6 +106,12 @@ ENDCLASS.
 
 START-OF-SELECTION.
 
-  "DATA lt_agg TYPE zcl_itab_nesting=>aggregated_data.
 
   DATA(lo_main) = NEW zcl_itab_nesting(  ).
+
+  lo_main->fill_itab(  ).
+
+  zcl_itab_nesting=>lt_nested_data = lo_main->perform_nesting(
+                                       artists = zcl_itab_nesting=>lt_artists
+                                       albums  = zcl_itab_nesting=>lt_albums
+                                       songs   = zcl_itab_nesting=>lt_songs ).
