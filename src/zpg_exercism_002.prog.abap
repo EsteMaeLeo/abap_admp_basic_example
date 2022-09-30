@@ -48,6 +48,12 @@ CLASS zcl_itab_nesting DEFINITION
            END OF artist_album_nested_type.
     TYPES nested_data TYPE STANDARD TABLE OF artist_album_nested_type WITH KEY artist_id.
 
+    DATA: lt_artists TYPE artists.
+
+     METHODS fill_itab
+      RETURNING
+        VALUE(artists) TYPE artists.
+
     METHODS perform_nesting
       IMPORTING
         artists            TYPE artists
@@ -61,6 +67,13 @@ CLASS zcl_itab_nesting DEFINITION
 ENDCLASS.
 
 CLASS zcl_itab_nesting IMPLEMENTATION.
+
+METHOD fill_itab.
+    artists = VALUE artists( ( artist_id = '1' artist_name = 'Godsmack' )
+                             ( artist_id = '2' artist_name = 'Shinedown' ) ).
+    lt_artists = artists.
+
+  ENDMETHOD.
 
   METHOD perform_nesting.
 
