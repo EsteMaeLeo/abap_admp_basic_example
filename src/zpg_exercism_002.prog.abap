@@ -48,11 +48,12 @@ CLASS zcl_itab_nesting DEFINITION
            END OF artist_album_nested_type.
     TYPES nested_data TYPE STANDARD TABLE OF artist_album_nested_type WITH KEY artist_id.
 
-    DATA: lt_artists TYPE artists.
+    DATA: lt_artists     TYPE artists,
+          lt_albums      TYPE albums,
+          lt_songs       TYPE songs,
+          lt_nested_data TYPE nested_data.
 
-     METHODS fill_itab
-      RETURNING
-        VALUE(artists) TYPE artists.
+    METHODS fill_itab.
 
     METHODS perform_nesting
       IMPORTING
@@ -68,10 +69,27 @@ ENDCLASS.
 
 CLASS zcl_itab_nesting IMPLEMENTATION.
 
-METHOD fill_itab.
-    artists = VALUE artists( ( artist_id = '1' artist_name = 'Godsmack' )
+  METHOD fill_itab.
+
+    lt_artists = VALUE artists( ( artist_id = '1' artist_name = 'Godsmack' )
                              ( artist_id = '2' artist_name = 'Shinedown' ) ).
-    lt_artists = artists.
+
+    lt_albums = VALUE albums( ( artist_id = '1' album_id = '1' album_name = 'Faceless' )
+                              ( artist_id = '1' album_id = '2' album_name = 'When Lengends Rise' )
+                              ( artist_id = '1' album_id = '1' album_name = 'The Sound of Madness' )
+                              ( artist_id = '1' album_id = '2' album_name = 'Planet Zero' ) ).
+
+
+
+    lt_songs = VALUE songs( ( artist_id = '1' album_id = '1'  song_id = '1' song_name = 'Straight Out Of Line')
+                            ( artist_id = '1' album_id = '1'  song_id = '2' song_name = 'Changes' )
+                            ( artist_id = '1' album_id = '2'  song_id = '1' song_name = 'Bullet Proof' )
+                            ( artist_id = '1' album_id = '2'  song_id = '2' song_name = 'Under Your Scars' )
+                            ( artist_id = '2' album_id = '1'  song_id = '1' song_name = 'Second Chance' )
+                            ( artist_id = '2' album_id = '1'  song_id = '2' song_name = 'Breaking Inside' )
+                            ( artist_id = '2' album_id = '2'  song_id = '1' song_name = 'Dysfunctional You' )
+                            ( artist_id = '2' album_id = '2'  song_id = '2' song_name = 'Daylight' ) ).
+
 
   ENDMETHOD.
 
@@ -81,7 +99,7 @@ METHOD fill_itab.
 
 ENDCLASS.
 
-sTART-OF-SELECTION.
+START-OF-SELECTION.
 
   "DATA lt_agg TYPE zcl_itab_nesting=>aggregated_data.
 
