@@ -100,6 +100,17 @@ CLASS zcl_itab_nesting IMPLEMENTATION.
 
   METHOD perform_nesting.
 
+    lt_nested_data = VALUE nested_data( FOR ls_artists IN lt_artists
+                                        ( artist_id = ls_artists-artist_id
+                                          artist_name = ls_artists-artist_name
+                                          albums = VALUE #( FOR ls_albums IN lt_albums WHERE ( artist_id EQ ls_artists-artist_id )
+                                                               ( album_id = ls_albums-album_id
+                                                                 album_name = ls_albums-album_id
+                                                                 songs = VALUE #( FOR ls_songs IN lt_songs WHERE ( artist_id EQ ls_artists-artist_id AND album_id = ls_albums-album_id )
+                                                                                ( song_id = ls_songs-song_id
+                                                                                  song_name =  ls_songs-song_name ) ) ) )
+                                          ) ).
+
   ENDMETHOD.
 
 ENDCLASS.
