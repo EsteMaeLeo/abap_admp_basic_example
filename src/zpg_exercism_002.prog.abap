@@ -100,15 +100,45 @@ CLASS zcl_itab_nesting IMPLEMENTATION.
 
   METHOD perform_nesting.
 
-    lt_nested_data = VALUE nested_data( FOR ls_artists IN lt_artists
-                                        ( artist_id = ls_artists-artist_id
-                                          artist_name = ls_artists-artist_name
-                                          albums = VALUE #( FOR ls_albums IN lt_albums WHERE ( artist_id EQ ls_artists-artist_id )
-                                                               ( album_id = ls_albums-album_id
-                                                                 album_name = ls_albums-album_id
-                                                                 songs = VALUE #( FOR ls_songs IN lt_songs WHERE ( artist_id EQ ls_artists-artist_id AND album_id = ls_albums-album_id )
-                                                                                ( song_id = ls_songs-song_id
-                                                                                  song_name =  ls_songs-song_name ) ) ) )
+
+* lt_nested_data = VALUE nested_data( FOR ls_artists IN lt_artists
+*
+*                                          FOR ls_albums IN lt_albums WHERE ( artist_id EQ ls_artists-artist_id )
+*
+*                                            let alb = VALUE albums( album_id = ls_albums-album_id
+*                                                              album_name = ls_albums-album_id
+*                                                              songs = VALUE #( FOR ls_songs IN lt_songs WHERE ( artist_id EQ ls_artists-artist_id AND album_id = ls_albums-album_id )
+*                                                                                ( song_id = ls_songs-song_id
+*                                                                                  song_name =  ls_songs-song_name )  )
+*
+*                                            artist_id = ls_artists-artist_id
+*                                             artist_name = ls_artists-artist_name
+*                                             albums = alb
+*                                         )
+*                                          .
+*
+                                           nested_data = VALUE #( FOR artist IN artists
+                            ( artist_id   = artist-artist_id
+                              artist_name = artist-artist_name
+                              albums      = VALUE #( FOR album IN albums WHERE ( artist_id = artist-artist_id )
+                                                        ( album_id   = album-album_id
+                                                          album_name = album-album_name
+                                                          songs      = VALUE #( FOR song IN songs WHERE ( artist_id = artist-artist_id AND
+                                                                                                          album_id = album-album_id )
+                                                                         ( song_id   = song-song_id
+                                                                           song_name = song-song_name ) ) ) ) ) ).
+
+
+    nested_data = VALUE #( FOR ls_artist IN artists
+                                        ( artist_id = ls_artist-artist_id
+                                          artist_name = ls_artist-artist_name
+                                          albums = VALUE #( FOR ls_album IN albums
+                                                            WHERE ( artist_id = ls_artist-artist_id )
+                                                               ( album_id = ls_album-album_id
+                                                                 album_name = ls_album-album_name
+                                                                 songs = VALUE #( FOR ls_song IN songs WHERE ( artist_id EQ ls_artist-artist_id AND album_id = ls_album-album_id )
+                                                                                ( song_id = ls_song-song_id
+                                                                                  song_name =  ls_song-song_name ) ) ) )
                                           ) ).
 
   ENDMETHOD.
